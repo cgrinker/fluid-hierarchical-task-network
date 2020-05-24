@@ -5,16 +5,16 @@ namespace FluidHTN.Factory
 {
     public interface IFactory
     {
-        T[] CreateArray<T>(int length);
-        bool FreeArray<T>(ref T[] array);
+        ContextType[] CreateArray<ContextType>(int length);
+        bool FreeArray<ContextType>(ref ContextType[] array);
 
-        Queue<T> CreateQueue<T>();
-        bool FreeQueue<T>(ref Queue<T> queue);
+        Queue<ContextType> CreateQueue<ContextType>();
+        bool FreeQueue<ContextType>(ref Queue<ContextType> queue);
 
-        List<T> CreateList<T>();
-        bool FreeList<T>(ref List<T> list);
+        List<ContextType> CreateList<ContextType>();
+        bool FreeList<ContextType>(ref List<ContextType> list);
 
-        T Create<T>() where T : new();
-        bool Free<T>(ref T obj);
+        ContextType Create<ContextType>() where ContextType : new();
+        bool Free<ContextType>(ref ContextType obj);
     }
 }

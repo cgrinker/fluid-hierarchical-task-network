@@ -9,14 +9,14 @@ using FluidHTN.PrimitiveTasks;
 
 namespace FluidHTN
 {
-    public abstract class BaseDomainBuilder<DB, T>
-        where DB : BaseDomainBuilder<DB, T>
-        where T : IContext
+    public abstract class BaseDomainBuilder<DB, ContextType, StateType>
+        where DB : BaseDomainBuilder<DB, ContextType, StateType>
+        where ContextType : IContext<StateType>
     {
         // ========================================================= FIELDS
 
-        protected readonly Domain<T> _domain;
-        protected List<ITask> _pointers;
+        protected readonly Domain<ContextType, StateType> _domain;
+        protected List<ITask<StateType>> _pointers;
         protected readonly IFactory _factory;
 
         // ========================================================= CONSTRUCTION
@@ -24,14 +24,14 @@ namespace FluidHTN
         public BaseDomainBuilder(string domainName, IFactory factory)
         {
             _factory = factory;
-            _domain = new Domain<T>(domainName);
-            _pointers = _factory.CreateList<ITask>();
+            _domain = new Domain<ContextType, StateType>(domainName);
+            _pointers = _factory.CreateList<ITask<StateType>>();
             _pointers.Add(_domain.Root);
         }
 
         // ========================================================= PROPERTIES
 
-        public ITask Pointer
+        public ITask<StateType> Pointer
         {
             get
             {
@@ -52,13 +52,13 @@ namespace FluidHTN
         ///     Compound tasks are comprised of a set of subtasks and a set of conditions.
         ///     http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf
         /// </summary>
-        /// <typeparam name="P">The type of compound task</typeparam>
+        /// <ContextTypeypeparam name="P">The type of compound task</typeparam>
         /// <param name="name">The name given to the task, mainly for debug/display purposes</param>
         /// <returns></returns>
-        public DB CompoundTask<P>(string name) where P : ICompoundTask, new()
+        public DB CompoundTask<P>(string name) where P : ICompoundTask<StateType>, new()
         {
             var parent = new P();
-            return CompoundTask(name, parent);
+            return CompoundTask<P>(name, parent);
         }
 
         /// <summary>
@@ -71,15 +71,15 @@ namespace FluidHTN
         ///     Compound tasks are comprised of a set of subtasks and a set of conditions.
         ///     http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf
         /// </summary>
-        /// <typeparam name="P">The type of compound task</typeparam>
+        /// <ContextTypeypeparam name="P">The type of compound task</typeparam>
         /// <param name="name">The name given to the task, mainly for debug/display purposes</param>
         /// <param task="task">The task instance</param>
         /// <returns></returns>
-        public DB CompoundTask<P>(string name, P task) where P : ICompoundTask
+        public DB CompoundTask<P>(string name, P task) where P : ICompoundTask<StateType>
         {
             if (task != null)
             {
-                if (Pointer is ICompoundTask compoundTask)
+                if (Pointer is ICompoundTask<StateType> compoundTask)
                 {
                     task.Name = name;
                     _domain.Add(compoundTask, task);
@@ -106,12 +106,12 @@ namespace FluidHTN
         ///     a set of effects, a set of conditions and a set of executing conditions.
         ///     http://www.gameaipro.com/GameAIPro/GameAIPro_Chapter12_Exploring_HTN_Planners_through_Example.pdf
         /// </summary>
-        /// <typeparam name="P">The type of primitive task</typeparam>
+        /// <ContextTypeypeparam name="P">The type of primitive task</typeparam>
         /// <param name="name">The name given to the task, mainly for debug/display purposes</param>
         /// <returns></returns>
-        public DB PrimitiveTask<P>(string name) where P : IPrimitiveTask, new()
+        public DB PrimitiveTask<P>(string name) where P : IPrimitiveTask<StateType>, new()
         {
-            if (Pointer is ICompoundTask compoundTask)
+            if (Pointer is ICompoundTask<StateType> compoundTask)
             {
                 var parent = new P { Name = name };
                 _domain.Add(compoundTask, parent);
@@ -137,9 +137,9 @@ namespace FluidHTN
         /// <returns></returns>
         protected DB PausePlanTask()
         {
-            if (Pointer is IDecomposeAll compoundTask)
+            if (Pointer is IDecomposeAll<StateType> compoundTask)
             {
-                var parent = new PausePlanTask() { Name = "Pause Plan" };
+                var parent = new PausePlanTask<StateType>() { Name = "Pause Plan" };
                 _domain.Add(compoundTask, parent);
             }
             else
@@ -161,7 +161,7 @@ namespace FluidHTN
         /// <returns></returns>
         public DB Sequence(string name)
         {
-            return CompoundTask<Sequence>(name);
+            return CompoundTask<Sequence<StateType>>(name);
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ namespace FluidHTN
         /// <returns></returns>
         public DB Select(string name)
         {
-            return CompoundTask<Selector>(name);
+            return CompoundTask<Selector<StateType>>(name);
         }
 
         // ========================================================= PRIMITIVE TASKS
@@ -184,7 +184,7 @@ namespace FluidHTN
         /// <returns></returns>
         public DB Action(string name)
         {
-            return PrimitiveTask<PrimitiveTask>(name);
+            return PrimitiveTask<PrimitiveTask<StateType>>(name);
         }
 
         // ========================================================= CONDITIONS
@@ -195,9 +195,9 @@ namespace FluidHTN
         /// <param name="name"></param>
         /// <param name="condition"></param>
         /// <returns></returns>
-        public DB Condition(string name, Func<T, bool> condition)
+        public DB Condition(string name, Func<ContextType, bool> condition)
         {
-            var cond = new FuncCondition<T>(name, condition);
+            var cond = new FuncCondition<ContextType, StateType>(name, condition);
             Pointer.AddCondition(cond);
 
             return (DB) this;
@@ -211,11 +211,11 @@ namespace FluidHTN
         /// <param name="name"></param>
         /// <param name="condition"></param>
         /// <returns></returns>
-        public DB ExecutingCondition(string name, Func<T, bool> condition)
+        public DB ExecutingCondition(string name, Func<ContextType, bool> condition)
         {
-            if (Pointer is IPrimitiveTask task)
+            if (Pointer is IPrimitiveTask<StateType> task)
             {
-                var cond = new FuncCondition<T>(name, condition);
+                var cond = new FuncCondition<ContextType, StateType>(name, condition);
                 task.AddExecutingCondition(cond);
             }
             else
@@ -233,11 +233,11 @@ namespace FluidHTN
         /// </summary>
         /// <param name="action"></param>
         /// <returns></returns>
-        public DB Do(Func<T, TaskStatus> action, Action<T> forceStopAction = null)
+        public DB Do(Func<ContextType, TaskStatus> action, Action<ContextType> forceStopAction = null)
         {
-            if (Pointer is IPrimitiveTask task)
+            if (Pointer is IPrimitiveTask<StateType> task)
             {
-                var op = new FuncOperator<T>(action, forceStopAction);
+                var op = new FuncOperator<ContextType, StateType>(action, forceStopAction);
                 task.SetOperator(op);
             }
             else
@@ -257,11 +257,11 @@ namespace FluidHTN
         /// <param name="effectType"></param>
         /// <param name="action"></param>
         /// <returns></returns>
-        public DB Effect(string name, EffectType effectType, Action<T, EffectType> action)
+        public DB Effect(string name, EffectType effectType, Action<ContextType, EffectType> action)
         {
-            if (Pointer is IPrimitiveTask task)
+            if (Pointer is IPrimitiveTask<StateType> task)
             {
-                var effect = new ActionEffect<T>(name, effectType, action);
+                var effect = new ActionEffect<ContextType, StateType>(name, effectType, action);
                 task.AddEffect(effect);
             }
             else
@@ -289,9 +289,9 @@ namespace FluidHTN
         /// </summary>
         /// <param name="domain"></param>
         /// <returns></returns>
-        public DB Splice(Domain<T> domain)
+        public DB Splice(Domain<ContextType, StateType> domain)
         {
-            if (Pointer is ICompoundTask compoundTask)
+            if (Pointer is ICompoundTask<StateType> compoundTask)
                 _domain.Add(compoundTask, domain.Root);
             else
                 throw new Exception(
@@ -309,9 +309,9 @@ namespace FluidHTN
         /// </summary>
         public DB Slot(int slotId)
         {
-            if (Pointer is ICompoundTask compoundTask)
+            if (Pointer is ICompoundTask<StateType> compoundTask)
             {
-                var slot = new Slot() { SlotId = slotId, Name = $"Slot {slotId}" };
+                var slot = new Slot<StateType>() { SlotId = slotId, Name = $"Slot {slotId}" };
                 _domain.Add(compoundTask, slot);
             }
             else
@@ -343,7 +343,7 @@ namespace FluidHTN
         ///     Build the designed domain and return a domain instance.
         /// </summary>
         /// <returns></returns>
-        public Domain<T> Build()
+        public Domain<ContextType, StateType> Build()
         {
             if (Pointer != _domain.Root)
                 throw new Exception($"The domain definition lacks one or more End() statements. Pointer is '{Pointer.Name}', but expected '{_domain.Root.Name}'.");

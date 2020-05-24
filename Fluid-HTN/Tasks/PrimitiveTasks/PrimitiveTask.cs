@@ -6,40 +6,40 @@ using FluidHTN.Operators;
 
 namespace FluidHTN.PrimitiveTasks
 {
-    public class PrimitiveTask : IPrimitiveTask
+    public class PrimitiveTask<StateType> : IPrimitiveTask<StateType>
     {
         // ========================================================= PROPERTIES
 
         public string Name { get; set; }
-        public ICompoundTask Parent { get; set; }
-        public List<ICondition> Conditions { get; } = new List<ICondition>();
-        public List<ICondition> ExecutingConditions { get; } = new List<ICondition>();
+        public ICompoundTask<StateType> Parent { get; set; }
+        public List<ICondition<StateType>> Conditions { get; } = new List<ICondition<StateType>>();
+        public List<ICondition<StateType>> ExecutingConditions { get; } = new List<ICondition<StateType>>();
         public TaskStatus LastStatus { get; }
-        public IOperator Operator { get; private set; }
-        public List<IEffect> Effects { get; } = new List<IEffect>();
+        public IOperator<StateType> Operator { get; private set; }
+        public List<IEffect<StateType>> Effects { get; } = new List<IEffect<StateType>>();
 
         // ========================================================= VALIDITY
 
-        public DecompositionStatus OnIsValidFailed(IContext ctx)
+        public DecompositionStatus OnIsValidFailed(IContext<StateType> ctx)
         {
             return DecompositionStatus.Failed;
         }
 
         // ========================================================= ADDERS
 
-        public ITask AddCondition(ICondition condition)
+        public ITask<StateType> AddCondition(ICondition<StateType> condition)
         {
             Conditions.Add(condition);
             return this;
         }
 
-        public ITask AddExecutingCondition(ICondition condition)
+        public ITask<StateType> AddExecutingCondition(ICondition<StateType> condition)
         {
             ExecutingConditions.Add(condition);
             return this;
         }
 
-        public ITask AddEffect(IEffect effect)
+        public ITask<StateType> AddEffect(IEffect<StateType> effect)
         {
             Effects.Add(effect);
             return this;
@@ -47,7 +47,7 @@ namespace FluidHTN.PrimitiveTasks
 
         // ========================================================= SETTERS
 
-        public void SetOperator(IOperator action)
+        public void SetOperator(IOperator<StateType> action)
         {
             if (Operator != null) throw new Exception("A Primitive Task can only contain a single Operator!");
 
@@ -56,7 +56,7 @@ namespace FluidHTN.PrimitiveTasks
 
         // ========================================================= FUNCTIONALITY
 
-        public void ApplyEffects(IContext ctx)
+        public void ApplyEffects(IContext<StateType> ctx)
         {
             if (ctx.ContextState == ContextState.Planning)
             {
@@ -71,14 +71,14 @@ namespace FluidHTN.PrimitiveTasks
             if (ctx.LogDecomposition) ctx.CurrentDecompositionDepth--;
         }
 
-        public void Stop(IContext ctx)
+        public void Stop(IContext<StateType> ctx)
         {
             Operator?.Stop(ctx);
         }
 
         // ========================================================= VALIDITY
 
-        public bool IsValid(IContext ctx)
+        public bool IsValid(IContext<StateType> ctx)
         {
             if (ctx.LogDecomposition) Log(ctx, $"PrimitiveTask.IsValid check");
             foreach (var condition in Conditions)
@@ -100,7 +100,7 @@ namespace FluidHTN.PrimitiveTasks
 
         // ========================================================= LOGGING
 
-        protected virtual void Log(IContext ctx, string description, ConsoleColor color = ConsoleColor.White)
+        protected virtual void Log(IContext<StateType> ctx, string description, ConsoleColor color = ConsoleColor.White)
         {
             ctx.Log(Name, description, ctx.CurrentDecompositionDepth+1, this, color);
         }

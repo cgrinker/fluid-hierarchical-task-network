@@ -4,15 +4,15 @@ using FluidHTN.PrimitiveTasks;
 
 namespace FluidHTN.Compounds
 {
-    public class Selector : CompoundTask
+    public class Selector<StateType> : CompoundTask<StateType>
     {
         // ========================================================= FIELDS
 
-        protected readonly Queue<ITask> Plan = new Queue<ITask>();
+        protected readonly Queue<ITask<StateType>> Plan = new Queue<ITask<StateType>>();
 
         // ========================================================= VALIDITY
 
-        public override bool IsValid(IContext ctx)
+        public override bool IsValid(IContext<StateType> ctx)
         {
             // Check that our preconditions are valid first.
             if (base.IsValid(ctx) == false)
@@ -40,7 +40,7 @@ namespace FluidHTN.Compounds
         /// </summary>
         /// <param name="ctx"></param>
         /// <returns></returns>
-        protected override DecompositionStatus OnDecompose(IContext ctx, int startIndex, out Queue<ITask> result)
+        protected override DecompositionStatus OnDecompose(IContext<StateType> ctx, int startIndex, out Queue<ITask<StateType>> result)
         {
             Plan.Clear();
 
@@ -91,8 +91,8 @@ namespace FluidHTN.Compounds
             return result.Count == 0 ? DecompositionStatus.Failed : DecompositionStatus.Succeeded;
         }
 
-        protected override DecompositionStatus OnDecomposeTask(IContext ctx, ITask task, int taskIndex,
-            int[] oldStackDepth, out Queue<ITask> result)
+        protected override DecompositionStatus OnDecomposeTask(IContext<StateType> ctx, ITask<StateType> task, int taskIndex,
+            int[] oldStackDepth, out Queue<ITask<StateType>> result)
         {
             if (task.IsValid(ctx) == false)
             {
@@ -101,19 +101,19 @@ namespace FluidHTN.Compounds
                 return task.OnIsValidFailed(ctx);
             }
 
-            if (task is ICompoundTask compoundTask)
+            if (task is ICompoundTask<StateType> compoundTask)
             {
                 return OnDecomposeCompoundTask(ctx, compoundTask, taskIndex, null, out result);
             }
 
-            if (task is IPrimitiveTask primitiveTask)
+            if (task is IPrimitiveTask<StateType> primitiveTask)
             {
                 if (ctx.LogDecomposition) Log(ctx, $"Selector.OnDecomposeTask:Pushed {primitiveTask.Name} to plan!", ConsoleColor.Blue);
                 primitiveTask.ApplyEffects(ctx);
                 Plan.Enqueue(task);
             }
 
-            if (task is Slot slot)
+            if (task is Slot<StateType> slot)
             {
                 return OnDecomposeSlot(ctx, slot, taskIndex, null, out result);
             }
@@ -125,8 +125,8 @@ namespace FluidHTN.Compounds
             return status;
         }
 
-        protected override DecompositionStatus OnDecomposeCompoundTask(IContext ctx, ICompoundTask task, int taskIndex,
-            int[] oldStackDepth, out Queue<ITask> result)
+        protected override DecompositionStatus OnDecomposeCompoundTask(IContext<StateType> ctx, ICompoundTask<StateType> task, int taskIndex,
+            int[] oldStackDepth, out Queue<ITask<StateType>> result)
         {
             // We need to record the task index before we decompose the task,
             // so that the traversal record is set up in the right order.
@@ -175,7 +175,7 @@ namespace FluidHTN.Compounds
             return s;
         }
 
-        protected override DecompositionStatus OnDecomposeSlot(IContext ctx, Slot task, int taskIndex, int[] oldStackDepth, out Queue<ITask> result)
+        protected override DecompositionStatus OnDecomposeSlot(IContext<StateType> ctx, Slot<StateType> task, int taskIndex, int[] oldStackDepth, out Queue<ITask<StateType>> result)
         {
             // We need to record the task index before we decompose the task,
             // so that the traversal record is set up in the right order.

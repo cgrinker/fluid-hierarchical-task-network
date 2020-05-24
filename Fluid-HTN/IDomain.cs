@@ -3,10 +3,10 @@ using FluidHTN.Compounds;
 
 namespace FluidHTN
 {
-    public interface IDomain
+    public interface IDomain<StateType>
     {
-        TaskRoot Root { get; }
-        void Add(ICompoundTask parent, ITask subtask);
-        void Add(ICompoundTask parent, Slot slot);
+        TaskRoot<StateType> Root { get; }
+        void Add(ICompoundTask<StateType> parent, ITask<StateType> subtask);
+        void Add(ICompoundTask<StateType> parent, Slot<StateType> slot);
     }
 }

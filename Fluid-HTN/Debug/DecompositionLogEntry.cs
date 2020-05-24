@@ -26,33 +26,33 @@ namespace FluidHTN.Debug
         string ToString();
     }
 
-    public interface IDecompositionLogEntry<T> : IBaseDecompositionLogEntry
+    public interface IDecompositionLogEntry<ContextType> : IBaseDecompositionLogEntry
     {
-        T Entry { get; set; }
+        ContextType Entry { get; set; }
     }
 
-    public struct DecomposedCompoundTaskEntry : IDecompositionLogEntry<ITask>
+    public struct DecomposedCompoundTaskEntry<StateType> : IDecompositionLogEntry<ITask<StateType>>
     {
         public string Name { get; set; }
         public string Description { get; set; }
         public int Depth { get; set; }
         public ConsoleColor Color { get; set; }
-        public ITask Entry { get; set; }
+        public ITask<StateType> Entry { get; set; }
     }
 
-    public struct DecomposedConditionEntry : IDecompositionLogEntry<ICondition> {
+    public struct DecomposedConditionEntry<StateType> : IDecompositionLogEntry<ICondition<StateType>> {
         public string Name { get; set; }
         public string Description { get; set; }
         public int Depth { get; set; }
         public ConsoleColor Color { get; set; }
-        public ICondition Entry { get; set; }
+        public ICondition<StateType> Entry { get; set; }
     }
 
-    public struct DecomposedEffectEntry : IDecompositionLogEntry<IEffect> {
+    public struct DecomposedEffectEntry<StateType> : IDecompositionLogEntry<IEffect<StateType>> {
         public string Name { get; set; }
         public string Description { get; set; }
         public int Depth { get; set; }
         public ConsoleColor Color { get; set; }
-        public IEffect Entry { get; set; }
+        public IEffect<StateType> Entry { get; set; }
     }
 }

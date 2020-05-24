@@ -11,13 +11,13 @@ namespace FluidHTN
     ///     running plan
     ///     demands it, or look for a new potential plan if the world state gets dirty.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class Planner<T> where T : IContext
+    /// <ContextTypeypeparam name="T"></typeparam>
+    public class Planner<ContextType, StateType> where ContextType : IContext<StateType>
     {
         // ========================================================= FIELDS
 
-        private ITask _currentTask;
-        private readonly Queue<ITask> _plan = new Queue<ITask>();
+        private ITask<StateType> _currentTask;
+        private readonly Queue<ITask<StateType>> _plan = new Queue<ITask<StateType>>();
 
         // ========================================================= FIELDS
         public TaskStatus LastStatus { get; protected set; }
@@ -28,59 +28,59 @@ namespace FluidHTN
         ///		OnNewPlan(newPlan) is called when we found a new plan, and there is no
         ///		old plan to replace.
         /// </summary>
-        public Action<Queue<ITask>> OnNewPlan = null;
+        public Action<Queue<ITask<StateType>>> OnNewPlan = null;
 
         /// <summary>
         ///		OnReplacePlan(oldPlan, currentTask, newPlan) is called when we're about to replace the
         ///		current plan with a new plan.
         /// </summary>
-        public Action<Queue<ITask>, ITask, Queue<ITask>> OnReplacePlan = null;
+        public Action<Queue<ITask<StateType>>, ITask<StateType>, Queue<ITask<StateType>>> OnReplacePlan = null;
 
         /// <summary>
         ///		OnNewTask(task) is called after we popped a new task off the current plan.
         /// </summary>
-        public Action<ITask> OnNewTask = null;
+        public Action<ITask<StateType>> OnNewTask = null;
 
         /// <summary>
         ///		OnNewTaskConditionFailed(task, failedCondition) is called when we failed to
         ///		validate a condition on a new task.
         /// </summary>
-        public Action<ITask, ICondition> OnNewTaskConditionFailed = null;
+        public Action<ITask<StateType>, ICondition<StateType>> OnNewTaskConditionFailed = null;
 
         /// <summary>
         ///		OnStopCurrentTask(task) is called when the currently running task was stopped
         ///		forcefully.
         /// </summary>
-        public Action<IPrimitiveTask> OnStopCurrentTask = null;
+        public Action<IPrimitiveTask<StateType>> OnStopCurrentTask = null;
 
         /// <summary>
         ///		OnCurrentTaskCompletedSuccessfully(task) is called when the currently running task
         ///		completes successfully, and before its effects are applied.
         /// </summary>
-        public Action<IPrimitiveTask> OnCurrentTaskCompletedSuccessfully = null;
+        public Action<IPrimitiveTask<StateType>> OnCurrentTaskCompletedSuccessfully = null;
 
         /// <summary>
         ///		OnApplyEffect(effect) is called for each effect of the type PlanAndExecute on a
         ///		completed task.
         /// </summary>
-        public Action<IEffect> OnApplyEffect = null;
+        public Action<IEffect<StateType>> OnApplyEffect = null;
 
         /// <summary>
         ///		OnCurrentTaskFailed(task) is called when the currently running task fails to complete.
         /// </summary>
-        public Action<IPrimitiveTask> OnCurrentTaskFailed = null;
+        public Action<IPrimitiveTask<StateType>> OnCurrentTaskFailed = null;
 
         /// <summary>
         ///		OnCurrentTaskContinues(task) is called every tick that a currently running task
         ///		needs to continue.
         /// </summary>
-        public Action<IPrimitiveTask> OnCurrentTaskContinues = null;
+        public Action<IPrimitiveTask<StateType>> OnCurrentTaskContinues = null;
 
         /// <summary>
         ///		OnCurrentTaskExecutingConditionFailed(task, condition) is called if an Executing Condition
         ///		fails. The Executing Conditions are checked before every call to task.Operator.Update(...).
         /// </summary>
-        public Action<IPrimitiveTask, ICondition> OnCurrentTaskExecutingConditionFailed = null;
+        public Action<IPrimitiveTask<StateType>, ICondition<StateType>> OnCurrentTaskExecutingConditionFailed = null;
 
         // ========================================================= TICK PLAN
 
@@ -94,7 +94,7 @@ namespace FluidHTN
         /// </summary>
         /// <param name="domain"></param>
         /// <param name="ctx"></param>
-        public void Tick(Domain<T> domain, T ctx, bool allowImmediateReplan = true)
+        public void Tick(Domain<ContextType, StateType> domain, ContextType ctx, bool allowImmediateReplan = true)
         {
             if (ctx.IsInitialized == false)
                 throw new Exception("Context was not initialized!");
@@ -103,9 +103,9 @@ namespace FluidHTN
             bool isTryingToReplacePlan = false;
             // Check whether state has changed or the current plan has finished running.
             // and if so, try to find a new plan.
-            if (_currentTask == null && (_plan.Count == 0) || ctx.IsDirty)
+            if ((_currentTask == null && (_plan.Count == 0)) || ctx.IsDirty)
             {
-                Queue<PartialPlanEntry> lastPartialPlanQueue = null;
+                Queue<PartialPlanEntry<StateType>> lastPartialPlanQueue = null;
 
                 var worldStateDirtyReplan = ctx.IsDirty;
                 ctx.IsDirty = false;
@@ -120,7 +120,7 @@ namespace FluidHTN
                     if (ctx.HasPausedPartialPlan)
                     {
                         ctx.HasPausedPartialPlan = false;
-                        lastPartialPlanQueue = ctx.Factory.CreateQueue<PartialPlanEntry>();
+                        lastPartialPlanQueue = ctx.Factory.CreateQueue<PartialPlanEntry<StateType>>();
                         while (ctx.PartialPlanQueue.Count > 0)
                         {
                             lastPartialPlanQueue.Enqueue(ctx.PartialPlanQueue.Dequeue());
@@ -156,7 +156,7 @@ namespace FluidHTN
                     _plan.Clear();
                     while (newPlan.Count > 0) _plan.Enqueue(newPlan.Dequeue());
 
-                    if (_currentTask != null && _currentTask is IPrimitiveTask t)
+                    if (_currentTask != null && _currentTask is IPrimitiveTask<StateType> t)
                     {
                         OnStopCurrentTask?.Invoke(t);
                         t.Stop(ctx);
@@ -231,7 +231,7 @@ namespace FluidHTN
             }
 
             if (_currentTask != null)
-                if (_currentTask is IPrimitiveTask task)
+                if (_currentTask is IPrimitiveTask<StateType> task)
                 {
                     if (task.Operator != null)
                     {
@@ -323,11 +323,11 @@ namespace FluidHTN
 
         // ========================================================= RESET
 
-        public void Reset(IContext ctx)
+        public void Reset(IContext<StateType> ctx)
         {
             _plan.Clear();
 
-            if (_currentTask != null && _currentTask is IPrimitiveTask task)
+            if (_currentTask != null && _currentTask is IPrimitiveTask<StateType> task)
             {
                 task.Stop(ctx);
             }
@@ -340,7 +340,7 @@ namespace FluidHTN
         ///     Get the current plan. This is not a copy of the running plan, so treat it as read-only.
         /// </summary>
         /// <returns></returns>
-        public Queue<ITask> GetPlan()
+        public Queue<ITask<StateType>> GetPlan()
         {
             return _plan;
         }
@@ -349,7 +349,7 @@ namespace FluidHTN
         ///		Get the current task.
         /// </summary>
         /// <returns></returns>
-        public ITask GetCurrentTask()
+        public ITask<StateType> GetCurrentTask()
         {
             return _currentTask;
         }

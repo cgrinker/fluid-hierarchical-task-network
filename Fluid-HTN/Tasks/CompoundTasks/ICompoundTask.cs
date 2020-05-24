@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace FluidHTN.Compounds
 {
-    public interface ICompoundTask : ITask
+    public interface ICompoundTask<StateType> : ITask<StateType>
     {
-        List<ITask> Subtasks { get; }
-        ICompoundTask AddSubtask(ITask subtask);
+        List<ITask<StateType>> Subtasks { get; }
+        ICompoundTask<StateType> AddSubtask(ITask<StateType> subtask);
 
         /// <summary>
         ///     Decompose the task onto the tasks to process queue, mind it's depth first
         /// </summary>
         /// <param name="ctx"></param>
         /// <returns></returns>
-        DecompositionStatus Decompose(IContext ctx, int startIndex, out Queue<ITask> result);
+        DecompositionStatus Decompose(IContext<StateType> ctx, int startIndex, out Queue<ITask<StateType>> result);
     }
 }

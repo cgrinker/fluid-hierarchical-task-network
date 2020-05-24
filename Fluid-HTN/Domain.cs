@@ -4,25 +4,25 @@ using FluidHTN.Compounds;
 
 namespace FluidHTN
 {
-    public class Domain<T> : IDomain where T : IContext
+    public class Domain<ContextType, StateType> : IDomain<StateType> where ContextType : IContext<StateType>
     {
         // ========================================================= FIELDS
 
-        private Dictionary<int, Slot> _slots = null;
+        private Dictionary<int, Slot<StateType>> _slots = null;
 
         // ========================================================= CONSTRUCTION
 
         public Domain(string name)
         {
-            Root = new TaskRoot { Name = name, Parent = null };
+            Root = new TaskRoot<StateType> { Name = name, Parent = null };
         }
         // ========================================================= PROPERTIES
 
-        public TaskRoot Root { get; }
+        public TaskRoot<StateType> Root { get; }
 
         // ========================================================= HIERARCHY HANDLING
 
-        public void Add(ICompoundTask parent, ITask subtask)
+        public void Add(ICompoundTask<StateType> parent, ITask<StateType> subtask)
         {
             if (parent == subtask)
                 throw new Exception("Parent-task and Sub-task can't be the same instance!");
@@ -31,7 +31,7 @@ namespace FluidHTN
             subtask.Parent = parent;
         }
 
-        public void Add(ICompoundTask parent, Slot slot)
+        public void Add(ICompoundTask<StateType> parent, Slot<StateType> slot)
         {
             if (parent == slot)
                 throw new Exception("Parent-task and Sub-task can't be the same instance!");
@@ -49,7 +49,7 @@ namespace FluidHTN
 
             if(_slots == null)
             {
-                _slots = new Dictionary<int, Slot>();
+                _slots = new Dictionary<int, Slot<StateType>>();
             }
 
             _slots.Add(slot.SlotId, slot);
@@ -57,7 +57,7 @@ namespace FluidHTN
 
         // ========================================================= PLANNING
 
-        public DecompositionStatus FindPlan(T ctx, out Queue<ITask> plan)
+        public DecompositionStatus FindPlan(ContextType ctx, out Queue<ITask<StateType>> plan)
         {
             if (ctx.IsInitialized == false)
                 throw new Exception("Context was not initialized!");
@@ -119,11 +119,11 @@ namespace FluidHTN
             }
             else
             {
-                Queue<PartialPlanEntry> lastPartialPlanQueue = null;
+                Queue<PartialPlanEntry<StateType>> lastPartialPlanQueue = null;
                 if (ctx.HasPausedPartialPlan)
                 {
                     ctx.HasPausedPartialPlan = false;
-                    lastPartialPlanQueue = ctx.Factory.CreateQueue<PartialPlanEntry>();
+                    lastPartialPlanQueue = ctx.Factory.CreateQueue<PartialPlanEntry<StateType>>();
                     while (ctx.PartialPlanQueue.Count > 0)
                     {
                         lastPartialPlanQueue.Enqueue(ctx.PartialPlanQueue.Dequeue());
@@ -212,7 +212,7 @@ namespace FluidHTN
         ///     This can be used with Smart Objects, to extend the behavior
         ///     of an agent at runtime.
         /// </summary>
-        public bool TrySetSlotDomain(int slotId, Domain<T> subDomain)
+        public bool TrySetSlotDomain(int slotId, Domain<ContextType, StateType> subDomain)
         {
             if(_slots != null && _slots.TryGetValue(slotId, out var slot))
             {

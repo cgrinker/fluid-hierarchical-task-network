@@ -4,32 +4,32 @@ using FluidHTN.Conditions;
 
 namespace FluidHTN.Compounds
 {
-    public abstract class CompoundTask : ICompoundTask
+    public abstract class CompoundTask<StateType> : ICompoundTask<StateType>
     {
         // ========================================================= PROPERTIES
 
         public string Name { get; set; }
-        public ICompoundTask Parent { get; set; }
-        public List<ICondition> Conditions { get; } = new List<ICondition>();
+        public ICompoundTask<StateType> Parent { get; set; }
+        public List<ICondition<StateType>> Conditions { get; } = new List<ICondition<StateType>>();
         public TaskStatus LastStatus { get; private set; }
-        public List<ITask> Subtasks { get; } = new List<ITask>();
+        public List<ITask<StateType>> Subtasks { get; } = new List<ITask<StateType>>();
 
         // ========================================================= VALIDITY
 
-        public virtual DecompositionStatus OnIsValidFailed(IContext ctx)
+        public virtual DecompositionStatus OnIsValidFailed(IContext<StateType> ctx)
         {
             return DecompositionStatus.Failed;
         }
 
         // ========================================================= ADDERS
 
-        public ITask AddCondition(ICondition condition)
+        public ITask<StateType> AddCondition(ICondition<StateType> condition)
         {
             Conditions.Add(condition);
             return this;
         }
 
-        public ICompoundTask AddSubtask(ITask subtask)
+        public ICompoundTask<StateType> AddSubtask(ITask<StateType> subtask)
         {
             Subtasks.Add(subtask);
             return this;
@@ -37,7 +37,7 @@ namespace FluidHTN.Compounds
 
         // ========================================================= DECOMPOSITION
 
-        public DecompositionStatus Decompose(IContext ctx, int startIndex, out Queue<ITask> result)
+        public DecompositionStatus Decompose(IContext<StateType> ctx, int startIndex, out Queue<ITask<StateType>> result)
         {
             if (ctx.LogDecomposition) ctx.CurrentDecompositionDepth++;
             var status = OnDecompose(ctx, startIndex, out result);
@@ -45,17 +45,17 @@ namespace FluidHTN.Compounds
             return status;
         }
 
-        protected abstract DecompositionStatus OnDecompose(IContext ctx, int startIndex, out Queue<ITask> result);
+        protected abstract DecompositionStatus OnDecompose(IContext<StateType> ctx, int startIndex, out Queue<ITask<StateType>> result);
 
-        protected abstract DecompositionStatus OnDecomposeTask(IContext ctx, ITask task, int taskIndex, int[] oldStackDepth, out Queue<ITask> result);
+        protected abstract DecompositionStatus OnDecomposeTask(IContext<StateType> ctx, ITask<StateType> task, int taskIndex, int[] oldStackDepth, out Queue<ITask<StateType>> result);
 
-        protected abstract DecompositionStatus OnDecomposeCompoundTask(IContext ctx, ICompoundTask task, int taskIndex, int[] oldStackDepth, out Queue<ITask> result);
+        protected abstract DecompositionStatus OnDecomposeCompoundTask(IContext<StateType> ctx, ICompoundTask<StateType> task, int taskIndex, int[] oldStackDepth, out Queue<ITask<StateType>> result);
 
-        protected abstract DecompositionStatus OnDecomposeSlot(IContext ctx, Slot task, int taskIndex, int[] oldStackDepth, out Queue<ITask> result);
+        protected abstract DecompositionStatus OnDecomposeSlot(IContext<StateType> ctx, Slot<StateType> task, int taskIndex, int[] oldStackDepth, out Queue<ITask<StateType>> result);
 
         // ========================================================= VALIDITY
 
-        public virtual bool IsValid(IContext ctx)
+        public virtual bool IsValid(IContext<StateType> ctx)
         {
             foreach (var condition in Conditions)
             {
@@ -72,7 +72,7 @@ namespace FluidHTN.Compounds
 
         // ========================================================= LOGGING
 
-        protected virtual void Log(IContext ctx, string description, ConsoleColor color = ConsoleColor.White)
+        protected virtual void Log(IContext<StateType> ctx, string description, ConsoleColor color = ConsoleColor.White)
         {
             ctx.Log(Name, description, ctx.CurrentDecompositionDepth, this, color);
         }

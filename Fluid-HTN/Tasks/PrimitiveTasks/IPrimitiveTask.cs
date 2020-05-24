@@ -4,12 +4,12 @@ using FluidHTN.Operators;
 
 namespace FluidHTN.PrimitiveTasks
 {
-    public interface IPrimitiveTask : ITask
+    public interface IPrimitiveTask<StateType> : ITask<StateType>
     {
         /// <summary>
         ///     Executing conditions are validated before every call to Operator.Update(...)
         /// </summary>
-        List<ICondition> ExecutingConditions { get; }
+        List<ICondition<StateType>> ExecutingConditions { get; }
 
         /// <summary>
         ///     Add a new executing condition to the primitive task. This will be checked before
@@ -17,15 +17,15 @@ namespace FluidHTN.PrimitiveTasks
         /// </summary>
         /// <param name="condition"></param>
         /// <returns></returns>
-        ITask AddExecutingCondition(ICondition condition);
+        ITask<StateType> AddExecutingCondition(ICondition<StateType> condition);
 
-        IOperator Operator { get; }
-        void SetOperator(IOperator action);
+        IOperator<StateType> Operator { get; }
+        void SetOperator(IOperator<StateType> action);
 
-        List<IEffect> Effects { get; }
-        ITask AddEffect(IEffect effect);
-        void ApplyEffects(IContext ctx);
+        List<IEffect<StateType>> Effects { get; }
+        ITask<StateType> AddEffect(IEffect<StateType> effect);
+        void ApplyEffects(IContext<StateType> ctx);
 
-        void Stop(IContext ctx);
+        void Stop(IContext<StateType> ctx);
     }
 }

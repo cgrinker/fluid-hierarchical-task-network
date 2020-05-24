@@ -5,47 +5,47 @@ namespace FluidHTN.Factory
 {
     public sealed class DefaultFactory : IFactory
     {
-        public T[] CreateArray<T>(int length)
+        public ContextType[] CreateArray<ContextType>(int length)
         {
-            return new T[length];
+            return new ContextType[length];
         }
 
-        public List<T> CreateList<T>()
+        public List<ContextType> CreateList<ContextType>()
         {
-            return new List<T>();
+            return new List<ContextType>();
         }
 
-        public Queue<T> CreateQueue<T>()
+        public Queue<ContextType> CreateQueue<ContextType>()
         {
-            return new Queue<T>();
+            return new Queue<ContextType>();
         }
 
-        public bool FreeArray<T>(ref T[] array)
+        public bool FreeArray<ContextType>(ref ContextType[] array)
         {
             array = null;
             return array == null;
         }
 
-        public bool FreeList<T>(ref List<T> list)
+        public bool FreeList<ContextType>(ref List<ContextType> list)
         {
             list = null;
             return list == null;
         }
 
-        public bool FreeQueue<T>(ref Queue<T> queue)
+        public bool FreeQueue<ContextType>(ref Queue<ContextType> queue)
         {
             queue = null;
             return queue == null;
         }
 
-        public T Create<T>() where T : new()
+        public ContextType Create<ContextType>() where ContextType : new()
         {
-            return new T();
+            return new ContextType();
         }
 
-        public bool Free<T>(ref T obj)
+        public bool Free<ContextType>(ref ContextType obj)
         {
-            obj = default(T);
+            obj = default(ContextType);
             return obj == null;
         }
     }

@@ -2,15 +2,15 @@
 
 namespace FluidHTN.Effects
 {
-    public class ActionEffect<T> : IEffect where T : IContext
+    public class ActionEffect<ContextType, StateType> : IEffect<StateType> where ContextType : IContext<StateType>
     {
         // ========================================================= FIELDS
 
-        private readonly Action<T, EffectType> _action;
+        private readonly Action<ContextType, EffectType> _action;
 
         // ========================================================= CONSTRUCTION
 
-        public ActionEffect(string name, EffectType type, Action<T, EffectType> action)
+        public ActionEffect(string name, EffectType type, Action<ContextType, EffectType> action)
         {
             Name = name;
             Type = type;
@@ -24,9 +24,9 @@ namespace FluidHTN.Effects
 
         // ========================================================= FUNCTIONALITY
 
-        public void Apply(IContext ctx)
+        public void Apply(IContext<StateType> ctx)
         {
-            if (ctx is T c)
+            if (ctx is ContextType c)
             {
                 if (ctx.LogDecomposition) ctx.Log(Name, $"ActionEffect.Apply:{Type}", ctx.CurrentDecompositionDepth+1, this);
                 _action?.Invoke(c, Type);

@@ -1,8 +1,8 @@
 ﻿namespace FluidHTN.Operators
 {
-    public interface IOperator
+    public interface IOperator<StateType>
     {
-        TaskStatus Update(IContext ctx);
-        void Stop(IContext ctx);
+        TaskStatus Update(IContext<StateType> ctx);
+        void Stop(IContext<StateType> ctx);
     }
 }

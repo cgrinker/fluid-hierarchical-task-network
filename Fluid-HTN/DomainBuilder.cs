@@ -7,9 +7,9 @@ namespace FluidHTN
     ///     of the BaseDomainBuilder. This class is sealed, so if you want to extend the
     ///     functionality of the domain builder, extend BaseDomainBuilder instead.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public sealed class DomainBuilder<T> : BaseDomainBuilder<DomainBuilder<T>, T>
-        where T : IContext
+    /// <ContextTypeypeparam name="T"></typeparam>
+    public sealed class DomainBuilder<ContextType, StateType> : BaseDomainBuilder<DomainBuilder<ContextType, StateType>, ContextType, StateType>
+        where ContextType : IContext<StateType>
     {
         // ========================================================= CONSTRUCTION
 
